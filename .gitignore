@@ -1,0 +1,10 @@
+# Files to be ignored by git
+
+**.pyc
+**.pyo
+**~
+*.bak
+*.pclprof
+/.idea/dataSources
+__pycache__
+/#*#
