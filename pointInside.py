@@ -132,6 +132,10 @@ def is_inside_sm(polygon, point, tol=0):
     Unlike standard ray-casting algorithm, this one works on edges! (with no performance cost)
     According to performance tests - this is the best variant.
 
+    The algorithm is based on counting the number of edges of the polygon that are to the left of and not completely
+    above or below the point of interest. If and only if this number is odd, then the point is inside the polygon
+    (since it is a closed region).
+
     :param polygon: searched polygon, as a list of vertex points with polygon[-1] == polygon[0]
     :param point: an arbitrary point that can be inside or outside the polygon
     :return: 0 - the point is outside the polygon; 1 - the point is inside the polygon; 2 - the point is one edge (boundary)
@@ -143,32 +147,37 @@ def is_inside_sm(polygon, point, tol=0):
     ii = 0
     jj = 1
 
+    # point on endpoint of line (dy2=dx2=0)
+    if abs(dy2) <= tol and abs(point[0] - polygon[0][0]) <= tol:
+        return 2
+
     while ii < length:
         dy = dy2
         dy2 = point[1] - polygon[jj][1]
 
-        # consider only lines which are not completely above/below/right of the point
-        if dy * dy2 <= tol and (point[0] + tol >= polygon[ii][0] or point[0] + tol >= polygon[jj][0]):
+        # plt.plot([polygon[ii][0], polygon[jj][0]], [polygon[ii][1], polygon[jj][1]]); plt.scatter(*point); plt.show()
 
-            # non-horizontal line
-            if (dy < -tol or dy2 < -tol) and abs(dy - dy2) > tol:
-                F = dy * (polygon[jj][0] - polygon[ii][0]) / (dy - dy2) + polygon[ii][0]
+        # point on endpoint of line (dy2=dx2=0)
+        if abs(dy2) <= tol and abs(point[0] - polygon[jj][0]) <= tol:
+            return 2
 
-                if abs(point[0] - F) <= tol:  # point on line
-                    return 2
-                if point[0] > F:  # if line is left from the point - the ray moving towards left, will intersect it
-                    intersections += 1
-
-            # point on upper peak (dy2=dx2=0) or horizontal line (dy=dy2=0 and dx*dx2<=0)
-            elif abs(dy2) <= tol and (
-                    abs(point[0] - polygon[jj][0]) <= tol
-                    or (abs(dy) <= tol
-                        and (point[0] - polygon[ii][0]) * (point[0] - polygon[jj][0]) <= tol)
-            ):
+        # horizontal line (dy == dy2)
+        if abs(dy - dy2) <= tol:
+            # point on horizontal line (dy=dy2=0 and dx*dx2<=0)
+            if abs(dy) <= tol and abs(dy2) <= tol and (point[0] - polygon[ii][0]) * (point[0] - polygon[jj][0]) <= tol:
                 return 2
 
-            # there is another possibility: (dy=0 and dy2>0) or (dy>0 and dy2=0). It is skipped
-            # deliberately to prevent break-points intersections to be counted twice.
+        # consider only lines which are not completely above/below/right of the point
+        elif ((dy < 0) ^ (dy2 < 0)) and (point[0] + tol >= polygon[ii][0] or point[0] + tol >= polygon[jj][0]):
+            F = dy * (polygon[jj][0] - polygon[ii][0]) / (dy - dy2) + polygon[ii][0]
+
+            if abs(point[0] - F) <= tol:  # point on line
+                return 2
+            if point[0] > F:  # if line is left from the point - the ray moving towards left, will intersect it
+                intersections += 1
+
+        # there is another possibility: (dy=0 and dy2>0) or (dy>0 and dy2=0). It is skipped
+        # deliberately to prevent break-points intersections to be counted twice.
 
         ii = jj
         jj += 1
