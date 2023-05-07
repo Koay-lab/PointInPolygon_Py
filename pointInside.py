@@ -168,7 +168,7 @@ def is_inside_sm(polygon, point, tol=0):
                 return 2
 
         # consider only lines which are not completely above/below/right of the point
-        elif ((dy < 0) ^ (dy2 < 0)) and (point[0] + tol >= polygon[ii][0] or point[0] + tol >= polygon[jj][0]):
+        elif ((dy < tol) ^ (dy2 < tol)) and (point[0] + tol >= polygon[ii][0] or point[0] + tol >= polygon[jj][0]):
             F = dy * (polygon[jj][0] - polygon[ii][0]) / (dy - dy2) + polygon[ii][0]
 
             if abs(point[0] - F) <= tol:  # point on line
